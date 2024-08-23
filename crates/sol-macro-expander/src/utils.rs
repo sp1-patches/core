@@ -7,7 +7,7 @@ use sha3::Digest;
 ///
 /// [`keccak256`]: https://en.wikipedia.org/wiki/SHA-3
 pub(crate) fn keccak256<T: AsRef<[u8]>>(bytes: T) -> [u8; 32] {
-    let mut hasher = sha3::Sha3_256::new();
+    let mut hasher = sha3::Keccak256::new();
     hasher.update(bytes.as_ref());
     let hash = hasher.finalize();
     hash.to_vec().try_into().unwrap()

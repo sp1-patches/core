@@ -180,7 +180,7 @@ pub fn keccak256<T: AsRef<[u8]>>(bytes: T) -> B256 {
                 // SAFETY: Never reads from `output`.
                 unsafe { hasher.finalize_into_raw(output.as_mut_ptr().cast()) };
             } else {
-                let mut hasher = sha3::Sha3_256::new();
+                let mut hasher = sha3::Keccak256::new();
                 hasher.update(bytes);
                 // SAFETY: Never reads from `output`.
                 unsafe {
@@ -209,7 +209,7 @@ pub struct Keccak256 {
     #[cfg(feature = "tiny-keccak")]
     hasher: tiny_keccak::Keccak,
     #[cfg(not(any(feature = "asm-keccak", feature = "tiny-keccak")))]
-    hasher: sha3::Sha3_256,
+    hasher: sha3::Keccak256,
 }
 
 impl Default for Keccak256 {
@@ -236,7 +236,7 @@ impl Keccak256 {
             } else if #[cfg(feature = "tiny-keccak")] {
                 let hasher = tiny_keccak::Keccak::v256();
             } else {
-                let hasher = sha3::Sha3_256::new();
+                let hasher = sha3::Keccak256::new();
             }
         }
         Self { hasher }
