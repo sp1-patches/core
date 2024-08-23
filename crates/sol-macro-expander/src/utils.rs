@@ -1,17 +1,16 @@
 use ast::Spanned;
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
-use tiny_keccak::{Hasher, Keccak};
+use sha3::Digest;
 
 /// Simple interface to the [`keccak256`] hash function.
 ///
 /// [`keccak256`]: https://en.wikipedia.org/wiki/SHA-3
 pub(crate) fn keccak256<T: AsRef<[u8]>>(bytes: T) -> [u8; 32] {
-    let mut output = [0u8; 32];
-    let mut hasher = Keccak::v256();
+    let mut hasher = sha3::Sha3_256::new();
     hasher.update(bytes.as_ref());
-    hasher.finalize(&mut output);
-    output
+    let hash = hasher.finalize();
+    hash.to_vec().try_into().unwrap()
 }
 
 pub(crate) fn selector<T: AsRef<[u8]>>(bytes: T) -> ExprArray<u8> {
