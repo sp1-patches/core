@@ -276,7 +276,7 @@ impl Keccak256 {
             if #[cfg(all(feature = "asm-keccak", not(miri)))] {
                 self.hasher.finalize_into(output.into());
             } else if #[cfg(feature = "tiny-keccak")] {
-                self.hasher.finalize(output.into());
+                self.hasher.finalize(output);
             } else {
                 self.hasher.finalize_into(output.into());
             }
