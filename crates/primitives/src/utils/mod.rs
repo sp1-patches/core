@@ -4,6 +4,7 @@ use crate::B256;
 use alloc::{boxed::Box, collections::TryReserveError, vec::Vec};
 use cfg_if::cfg_if;
 use core::{fmt, mem::MaybeUninit};
+use sha3::Digest;
 
 mod units;
 pub use units::{
