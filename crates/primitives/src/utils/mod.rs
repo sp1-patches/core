@@ -7,6 +7,7 @@ use core::{
     fmt,
     mem::{ManuallyDrop, MaybeUninit},
 };
+use sha3::Digest;
 
 mod units;
 pub use units::{
@@ -16,8 +17,10 @@ pub use units::{
 cfg_if! {
     if #[cfg(all(feature = "asm-keccak", not(miri)))] {
         use keccak_asm::Digest as _;
-    } else {
+    } else if #[cfg(feature = "tiny-keccak")] {
         use tiny_keccak::Hasher as _;
+    } else {
+        use sha3::Digest as _;
     }
 }
 
@@ -175,11 +178,18 @@ pub fn keccak256<T: AsRef<[u8]>>(bytes: T) -> B256 {
 
                 // SAFETY: The output is 32-bytes, and the input comes from a slice.
                 unsafe { native_keccak256(bytes.as_ptr(), bytes.len(), output.as_mut_ptr().cast::<u8>()) };
-            } else {
+            } else if #[cfg(feature = "tiny-keccak")] {
                 let mut hasher = Keccak256::new();
                 hasher.update(bytes);
                 // SAFETY: Never reads from `output`.
                 unsafe { hasher.finalize_into_raw(output.as_mut_ptr().cast()) };
+            } else {
+                let mut hasher = sha3::Keccak256::new();
+                hasher.update(bytes);
+                // SAFETY: Never reads from `output`.
+                unsafe {
+                    hasher.finalize_into((&mut *(output.as_mut_ptr() as *mut [u8; 32])).into());
+                };
             }
         }
 
@@ -200,8 +210,10 @@ pub fn keccak256<T: AsRef<[u8]>>(bytes: T) -> B256 {
 pub struct Keccak256 {
     #[cfg(all(feature = "asm-keccak", not(miri)))]
     hasher: keccak_asm::Keccak256,
-    #[cfg(not(all(feature = "asm-keccak", not(miri))))]
+    #[cfg(feature = "tiny-keccak")]
     hasher: tiny_keccak::Keccak,
+    #[cfg(not(any(feature = "asm-keccak", feature = "tiny-keccak")))]
+    hasher: sha3::Keccak256,
 }
 
 impl Default for Keccak256 {
@@ -225,8 +237,10 @@ impl Keccak256 {
         cfg_if! {
             if #[cfg(all(feature = "asm-keccak", not(miri)))] {
                 let hasher = keccak_asm::Keccak256::new();
-            } else {
+            } else if #[cfg(feature = "tiny-keccak")] {
                 let hasher = tiny_keccak::Keccak::v256();
+            } else {
+                let hasher = sha3::Keccak256::new();
             }
         }
         Self { hasher }
@@ -265,8 +279,10 @@ impl Keccak256 {
         cfg_if! {
             if #[cfg(all(feature = "asm-keccak", not(miri)))] {
                 self.hasher.finalize_into(output.into());
-            } else {
+            } else if #[cfg(feature = "tiny-keccak")] {
                 self.hasher.finalize(output);
+            } else {
+                self.hasher.finalize_into(output.into());
             }
         }
     }
